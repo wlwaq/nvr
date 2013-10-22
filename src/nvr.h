@@ -34,7 +34,7 @@
 #include <netinet/in.h>    // for sockaddr_in
 #include <sys/types.h>    // for socket
 #include <sys/socket.h>    // for socket
-
+#include <sys/time.h>
 
 /************************************************************
 *服务器端口定义

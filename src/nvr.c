@@ -219,8 +219,8 @@ BOOL writeCertFile(int userID, BYTE buf[], int len)
 	if (userID == 0)
 		sprintf(certname, "./cacert/cacert.pem");
 	else
-		sprintf(certname, "./cert/usercert%d.pem", userID);
-
+		//sprintf(certname, "./cert/usercert%d.pem", userID);
+		sprintf(certname, "./cert/camerareceive.pem");
 	if(annotation == 2)
 		printf("  cert file name: %s\n", certname);
 
@@ -293,7 +293,8 @@ EVP_PKEY * getprivkeyfromprivkeyfile(int userID)
 		printf("EVP_PKEY_set1_RSA err\n");
 		RSA_free (rsa);
 		return NULL;
-	} else
+	}
+	else
 	{
 		RSA_free (rsa);
 		return privKey;
@@ -768,7 +769,8 @@ int fill_auth_active_packet(int user_ID,auth_active *auth_active_packet)
 
 int ProcessWAPIProtocolAuthActive(int user_ID, auth_active *auth_active_packet)
 {
-	if (!fill_auth_active_packet(user_ID, auth_active_packet)){
+	if (!fill_auth_active_packet(user_ID, auth_active_packet))
+	{
 		printf("fill auth active packet failed!\n");
 	}
 	else
@@ -878,7 +880,7 @@ int HandleWAPIProtocolAccessAuthRequest(int user_ID, auth_active *auth_active_pa
 	if(annotation == 2)
 		printf("write asue cert into cert file:\n");
 	int asue_ID = 1;
-	writeCertFile(asue_ID, (BYTE *)access_auth_requ_packet->certificatestaasue.cer_X509, (int)access_auth_requ_packet->certificatestaasue.cer_length);
+	//writeCertFile(asue_ID, (BYTE *)access_auth_requ_packet->certificatestaasue.cer_X509, (int)access_auth_requ_packet->certificatestaasue.cer_length);
 
 	//verify sign of ASUE
 	if(annotation == 2)
@@ -889,10 +891,11 @@ int HandleWAPIProtocolAccessAuthRequest(int user_ID, auth_active *auth_active_pa
 	BYTE derasuepubkey[1024];
 	int asuepubkeyLen, i;
 	asuepubKey = getpubkeyfromcert(asue_ID);
-	if(asuepubKey == NULL){
+	if(asuepubKey == NULL)
+	{
 		printf("get asue's public key failed.\n");
 		return FALSE;
-		}
+	}
 
 	pTmp = derasuepubkey;
 	//把证书公钥转换为DER编码的数据，以方便打印(aepubkey结构体不方便打印)
@@ -937,12 +940,14 @@ int HandleWAPIProtocolAccessAuthRequest(int user_ID, auth_active *auth_active_pa
 
 	if( memcmp(access_auth_requ_packet->staaeidentity.cer_der.data,
 		localaeidentity.cer_der.data,
-		localaeidentity.identity_length) != 0){
+		localaeidentity.identity_length) != 0)
+	{
 		printf("verify AE identity failed.\n");
 		printf("length:%d, %d\n", localaeidentity.identity_length, access_auth_requ_packet->staaeidentity.identity_length);
 		printf("data[:20]: %20s, %20s\n", localaeidentity.cer_der.data, access_auth_requ_packet->staaeidentity.cer_der.data);
 		return FALSE;
-	}else {
+	}else
+	{
 		if(annotation == 2)
 			printf("verify AE identity succeed.\n");
 	}
@@ -1203,6 +1208,8 @@ int fill_access_auth_resp_packet(int user_ID, access_auth_requ *access_auth_requ
 	{
 		access_auth_resp_packet->accessresult = 0; // by means of asu's asue cerresult1,ae set asue's access result(0-succeed,1-failed)
 	}
+	else
+		access_auth_resp_packet->accessresult = 1;
 
 
 	//fill packet length
@@ -1261,6 +1268,11 @@ void ProcessWAPIProtocol(int new_asue_socket)
 	certificate_auth_requ certificate_auth_requ_packet;
 	certificate_auth_resp certificate_auth_resp_packet;
 	access_auth_resp access_auth_resp_packet;
+
+
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	long start = tv.tv_sec * 1000 + tv.tv_usec / 1000;
 
 	//1) ProcessWAPIProtocolAuthActive
 	if(annotation == 1)
@@ -1327,6 +1339,11 @@ void ProcessWAPIProtocol(int new_asue_socket)
 	getchar();
 	ProcessWAPIProtocolAccessAuthResp(user_ID, &access_auth_requ_packet, &access_auth_resp_packet);
 	send_to_peer(new_asue_socket, (BYTE *)&access_auth_resp_packet, sizeof(access_auth_resp_packet));
+
+	gettimeofday(&tv, NULL);
+	long end = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+	printf("三元对等身份认证过程运行时间为：%d毫秒\n", end - start);
+
 
 	//run ffmpeg
 	if(auth_result)
