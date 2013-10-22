@@ -1115,7 +1115,7 @@ int HandleProcessWAPIProtocolCertAuthResp(int user_ID, certificate_auth_requ *ce
 		printf("*                                                                 *\n");
 		printf("*******************************************************************\n");
 //		printf("警告：网络硬盘录像机验证摄像机失败！不允许该摄像机接入！.\n");
-		return FALSE;
+//		return FALSE;
 	}
 	else if(annotation == 2)
 		printf("Authentication succeed!!\n");       //asu verify asue cert valid result succeed
@@ -1263,6 +1263,7 @@ void ProcessWAPIProtocol(int new_asue_socket)
 	int user_ID = 2;
 	int asu_socket;
 	int auth_result=FALSE;
+	int run_ffmpeg_flag=FALSE;
 	auth_active auth_active_packet;
 	access_auth_requ access_auth_requ_packet;
 	certificate_auth_requ certificate_auth_requ_packet;
@@ -1328,8 +1329,8 @@ void ProcessWAPIProtocol(int new_asue_socket)
 	recv_from_peer(asu_socket, (BYTE *)&certificate_auth_resp_packet, sizeof(certificate_auth_resp));
 
 	//pid_t pid;
-	auth_result = ProcessWAPIProtocolCertAuthResp(user_ID,&certificate_auth_requ_packet, &certificate_auth_resp_packet,&access_auth_resp_packet);//该函数的主要工作是查看证书验证结果，并填充接入认证响应分组
-
+//	auth_result = ProcessWAPIProtocolCertAuthResp(user_ID,&certificate_auth_requ_packet, &certificate_auth_resp_packet,&access_auth_resp_packet);//该函数的主要工作是查看证书验证结果，并填充接入认证响应分组
+	ProcessWAPIProtocolCertAuthResp(user_ID,&certificate_auth_requ_packet, &certificate_auth_resp_packet,&access_auth_resp_packet);
 	//5) ProcessWAPIProtocolAccessAuthResp
 	if (annotation == 1)
 		printf("\n*************\n 5) 接入认证响应分组(网络硬盘录像机->摄像机): \n");
@@ -1345,8 +1346,15 @@ void ProcessWAPIProtocol(int new_asue_socket)
 	printf("三元对等身份认证过程运行时间为：%d毫秒\n", end - start);
 
 
+	auth_result = access_auth_resp_packet.accessresult;
+	if (!auth_result) // accessresult:0---接入认证成功，1---接入认证失败
+		run_ffmpeg_flag = TRUE;
+	else
+		run_ffmpeg_flag = FALSE;
+
+
 	//run ffmpeg
-	if(auth_result)
+	if(run_ffmpeg_flag)        //run_ffmpeg_flag:0---不启动，1---启动
 	{
 		char abuf[INET_ADDRSTRLEN];
 		struct sockaddr_in asueaddr;
