@@ -1380,13 +1380,14 @@ void ProcessWAPIProtocol(int new_asue_socket)
 	}
 	else{
 		//int status;
-		printf("kill %d\n",pid);
-		kill(pid,SIGABRT);
-		wait(NULL);
-		pid++;
-		printf("kill %d\n",pid);
-		kill(pid,SIGABRT);
-		wait(NULL);
+//		printf("kill %d\n",pid);
+//		kill(pid,SIGABRT);
+//		wait(NULL);
+//		pid++;
+//		printf("kill %d\n",pid);
+//		kill(pid,SIGABRT);
+//		wait(NULL);
+		exit(0);
 	}
 
 
